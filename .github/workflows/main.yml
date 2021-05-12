@@ -1,0 +1,49 @@
+name: 'cron/30'
+
+on:
+  schedule:
+    - cron:  '*/30 * * * *'
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Use Node.js 14.x
+      uses: actions/setup-node@v1
+      with:
+        node-version: "14.x"
+    - name: created) created env file
+      run: |
+        touch .env
+        echo sheetKey="${{secrets.NODEAPP_SHEETKEY}}" >> .env
+        echo type="${{secrets.NODEAPP_TYPE}}" >> .env
+        echo project_id="${{secrets.NODEAPP_PROJECT_ID}}" >> .env
+        echo private_key_id="${{secrets.NODEAPP_PRIVATE_KEY_ID}}" >> .env
+        echo private_key="${{secrets.NODEAPP_PRIVATE_KEY}}" >> .env
+        echo client_email="${{secrets.NODEAPP_CLIENT_EMAIL}}" >> .env
+        echo client_id="${{secrets.NODEAPP_CLIENT_ID}}" >> .env
+        echo auth_uri="${{secrets.NODEAPP_AUTH_URI}}" >> .env
+        echo token_uri="${{secrets.NODEAPP_TOKEN_URI}}" >> .env
+        echo auth_provider_x509_cert_url="${{secrets.NODEAPP_AUTH_PROVIDER_X509_CERT_URL}}" >> .env
+        echo client_x509_cert_url="${{secrets.NODEAPP_CLIENT_X509_CERT_URL}}" >> .env
+    - name: A)npm install
+      run: |
+        npm install
+    - name: B)npm start
+      run: |
+        node app.js
+    - name: C) git push
+      env: 
+          GITHUB_REPO: ${{ secrets.REPO_NAME }}
+      run: |
+        cd result
+        git init
+        git config user.name "GitHub Actions"
+        git config user.email "noreply@github.com"
+        git add .
+        git commit -m "update `date +'%Y-%m-%d %H:%M:%S'`";
+        git remote add origin https://${{ secrets.DEPLOY_TOKEN }}@$GITHUB_REPO
+        git push -f origin master
